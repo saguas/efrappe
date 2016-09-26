@@ -1,0 +1,334 @@
+
+/*
+  Example style with usage of mixins.
+
+  If you change the language to a RTL language,
+  you'll get a marign of 50px on the right, instead of the left.
+  And a magic pink background.
+*/
+
+@screen-sss:                  375px;
+//** Deprecated `@screen-xs-min` as of v3.2.0
+@screen-sss-min:              @screen-sss;
+
+@screen-ss:                  414px;
+//** Deprecated `@screen-xs-min` as of v3.2.0
+@screen-ss-min:              @screen-ss;
+
+body {
+  background-color: #ffc835;
+}
+
+div.rui.navbar {
+  background-color: #ffc835;
+}
+
+a.rui.tag.link {
+  color: #4c3000;
+}
+
+.title {
+  color: #4c3000;
+}
+
+.bs-callout {
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid #eee;
+    border-left-width: 5px;
+    border-radius: 3px
+}
+
+.bs-callout h4 {
+    margin-top: 0;
+    margin-bottom: 5px
+}
+
+.bs-callout p:last-child {
+    margin-bottom: 0
+}
+
+.bs-callout code {
+    border-radius: 3px
+}
+
+.bs-callout + .bs-callout {
+    margin-top: -5px
+}
+
+.bs-callout-danger {
+    border-left-color: #ce4844
+}
+
+.bs-callout-danger h4 {
+    color: #ce4844
+}
+
+.bs-callout-warning {
+    border-left-color: #aa6708
+}
+
+.bs-callout-warning h4 {
+    color: #aa6708
+}
+
+.bs-callout-info {
+    border-left-color: #1b809e
+}
+
+.bs-callout-info h4 {
+    color: #1b809e
+}
+
+.btn-sq-xs {
+  width: 50px !important;
+  height: 50px !important;
+  padding:2px;
+  font-size: 10px;
+}
+
+/* Small devices (tablets, 375px and up) */
+@media (min-width: @screen-sss-min) {
+  .btn-sq-ssm {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 10px;
+  }
+}
+
+/* Small devices (tablets, 414px and up) */
+@media (min-width: @screen-ss-min) {
+  .btn-sq-ssm {
+    width: 70px !important;
+    height: 70px !important;
+    font-size: 10px;
+  }
+}
+
+/* Small devices (tablets, 768px and up) */
+@media (min-width: @screen-sm-min) {
+  .btn-sq-sm {
+    width: 80px !important;
+    height: 80px !important;
+    font-size: 10px;
+  }
+}
+
+/* Medium devices (desktops, 992px and up) */
+@media (min-width: @screen-md-min) {
+  .btn-sq-md {
+    width: 80px !important;
+    height: 80px !important;
+    font-size: 10px;
+  }
+}
+
+/* Large devices (large desktops, 1200px and up) */
+@media (min-width: @screen-lg-min) {
+  .btn-sq-lg {
+    width: 100px !important;
+    height: 100px !important;
+    font-size: 12px;
+  }
+}
+
+/*
+  Toggle Buttons change background-color and remove radio button circle.
+*/
+/*[data-toggle="buttons"] {
+  > .form-group > .btn {
+    input[type="radio"].circleOut {
+        display:none;
+      }
+  }
+ > .form-group > .btn-success.active.toggleBgColor {
+       background-color: #FF7F50;
+ }
+ > .form-group > .btn-success:active.toggleBgColor{
+       background-color: #FF7F50;
+   }
+ > .form-group > .btn-danger.active.toggleBgColor {
+       background-color: #8B0000;
+ }
+ > .form-group > .btn-danger:active.toggleBgColor{
+       background-color: #8B0000;
+   }
+}*/
+
+/*
+  Keyboard to insert client number.
+*/
+
+.btn.keyboard{
+    background-color: #BDB76B;
+    border-color: #BDB76B;
+}
+
+.btn.keyboard:hover,
+.btn.keyboard:focus {
+  background-color: #419641;
+  background-position: 0 -15px;
+}
+
+.btn.keyboard:active,
+.btn.keyboard.active {
+  background-color: #419641;
+  border-color: #3e8f3e;
+}
+
+/*.navbar-user-image {
+  width: 40px;
+  height: 40px;
+  margin-right: 3px;
+  border-radius: 4px;
+}
+
+.restaurant-icon {
+  width: 32px;
+  height: 32px;
+  ackmargin-right: 0px;
+  margin-top: -3px;
+}
+
+.restaurant-table-icon {
+  width: 24px;
+  height: 24px;
+  ackmargin-right: 0px;
+  margin-top: -3px;
+}*/
+
+.rticon {
+    -webkit-flex: 0 0 auto;
+   -moz-flex: 0 0 auto;
+   -ms-flex: 0 0 auto;
+   flex: 0 0 auto;
+}
+
+.icon-restaurantopen2 {
+  font-size: 4rem;
+}
+
+.icon-table-with-chair-white2{
+  font-size: 2rem;
+}
+
+.icon-table-with-man-white2{
+  font-size: 2rem;
+}
+
+.icon-man-sitting-in-front-of-a-table-eating2 {
+  font-size: 2rem;
+}
+
+.icon-man-sitting-in-front-of-a-table-eating-black{
+  font-size: 2rem;
+}
+
+.tables{
+  padding-bottom: 5px;
+}
+/*.RT{
+  position: relative;
+}
+
+.RT::before{
+  font-family: FontAwesome;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: inherit;
+
+  font-size: 18px;
+  padding-right: 0.5em;
+  position: absolute;
+  top: 10px;
+  left: 0;
+}
+
+.open{
+  content:url(/resources/restaurantopen.svg);
+}
+
+i.RT.table-with-man-white {
+  content:url(/resources/table-with-man-white.svg);
+}
+
+i.RT.table-with-chair-white{
+  content:url(/resources/table-with-chair-white.svg);
+}*/
+
+
+/* toastr*/
+/*
+#toast-container > .toast {
+    background-image: none !important;
+}
+
+#toast-container > .toast:before {
+    position: relative;
+    font-family: fontello;
+    font-size: 24px;
+    line-height: 18px;
+    float: left;
+    margin-left: -1em;
+    color: #FFF;
+    padding-right: 0.5em;
+    margin-right: 0.5em;
+}
+
+#toast-container > .toast-warning:before {
+    content: "\f003";
+}
+#toast-container > .toast-error:before {
+    content: "\f001";
+}
+#toast-container > .toast-info:before {
+    //content: "\f005";
+    color: #000000;
+    content: '\e80e';
+}
+#toast-container > .toast-success:before {
+    content: "\f002";
+}
+*/
+
+/*toastr*/
+
+.tt-query {
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+     -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+          box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+
+.tt-hint {
+  color: #999
+}
+
+.tt-menu {
+  width: 422px;
+  margin-top: 4px;
+  padding: 4px 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  -webkit-border-radius: 4px;
+     -moz-border-radius: 4px;
+          border-radius: 4px;
+  -webkit-box-shadow: 0 5px 10px rgba(0,0,0,.2);
+     -moz-box-shadow: 0 5px 10px rgba(0,0,0,.2);
+          box-shadow: 0 5px 10px rgba(0,0,0,.2);
+}
+
+.tt-suggestion {
+  padding: 3px 20px;
+  line-height: 24px;
+}
+
+.tt-suggestion.tt-cursor,.tt-suggestion:hover {
+  color: #fff;
+  background-color: #0097cf;
+
+}
+
+.tt-suggestion p {
+  margin: 0;
+}
