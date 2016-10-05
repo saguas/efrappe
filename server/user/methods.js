@@ -46,10 +46,11 @@ Meteor.methods(
       const change = changePassword.bind(this);
       return change(userId, newpwd);
     },
-    logoutFromFrappe: function(user){
-      check(user, String);
+    logoutFromFrappe: function(useremail){
+      check(useremail, String);
       this.unblock();
 
+      console.log("useremail ", useremail);
       const shopId = Reaction.getShopId();
       const permissions = ["admin"];
       //set for that user profile.frappe_logout = false
@@ -58,7 +59,7 @@ Meteor.methods(
         return getErrorResult(error);
       }
 
-      const userdoc = Meteor.users.findOne({"emails.address": {"$in": [user]}});
+      const userdoc = Meteor.users.findOne({"emails.address": {"$in": [useremail]}});
       Meteor.users.update({_id: userdoc._id}, {$set:{"profile.frappe_login": false}});
     }
 });
