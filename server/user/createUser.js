@@ -1,6 +1,6 @@
 import { Meteor } from "meteor/meteor";
 import { Random } from 'meteor/random';
-import { Accounts } from 'meteor/accounts-base'
+import { Accounts } from 'meteor/accounts-base';
 import { Reaction, Hooks, Logger } from "/server/api";
 import { merge, uniqWith } from "lodash";
 

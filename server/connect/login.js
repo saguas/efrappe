@@ -1,10 +1,40 @@
 import _ from "lodash";
 import { Meteor } from "meteor/meteor";
 import { EJSON } from 'meteor/ejson';
+import { Accounts } from 'meteor/accounts-base';
 import { Reaction, Hooks, Logger } from "/server/api";
 import { eFrappe } from "../";
+import bcrypt from "bcrypt";
 
 
+var SHA256 = Package.sha.SHA256;
+var bcryptHash = Meteor.wrapAsync(bcrypt.hash);
+
+var getPasswordString = function getPasswordString(password) {                                                         // 32
+  if (typeof password === "string") {                                                                                  // 33
+    password = SHA256(password);                                                                                       // 34
+  } else {                                                                                                             // 35
+    // 'password' is an object                                                                                         //
+    if (password.algorithm !== "sha-256") {                                                                            // 36
+      throw new Error("Invalid password hash algorithm. " + "Only 'sha-256' is allowed.");                             // 37
+    }                                                                                                                  // 39
+    password = password.digest;                                                                                        // 40
+  }                                                                                                                    // 41
+  return password;                                                                                                     // 42
+};                                                                                                                     // 43
+                                                                                                                       //
+// Use bcrypt to hash the password for storage in the database.                                                        //
+// `password` can be a string (in which case it will be run through                                                    //
+// SHA256 before bcrypt) or an object with properties `digest` and                                                     //
+// `algorithm` (in which case we bcrypt `password.digest`).                                                            //
+//                                                                                                                     //
+var hashPassword = function hashPassword(password) {                                                                   // 50
+  password = getPasswordString(password);                                                                              // 51
+  return bcryptHash(password, Accounts._bcryptRounds);                                                                 // 52
+};
+
+
+//console.log("hash password ", Accounts);
 
 const get_frappe_admin_username = function(){
   let FRAPPE_ADMIN_USERNAME;
@@ -22,16 +52,14 @@ Accounts.validateLoginAttempt((opts) => {
     if(opts.type === "password" && opts.allowed && opts.methodName === "login" && opts.user){
          let shopid = Reaction.getShopId();
          const isadmin = _.find(opts.user.roles[shopid], function(a){return a === "admin"});
-         let password = /*opts.methodArguments[0].password.digest*/"8950388";
+         let password = opts.methodArguments[0].password.digest;
          let username = opts.methodArguments[0].user.email;
          if(isadmin){
             username = get_frappe_admin_username();
          }
-         console.log("on login user: ", username);
-         console.log("on login password: ", password);
          const result = frappe_login.call({userId: opts.user._id}, username, password);
          console.log("on login frappe result: ", result);
-         if(result && result.statusCode === 200 && result.data.error_status !== true){
+         if(result && result.statusCode === 200 && result.data && result.data.error_status !== true){
             //if success return opts else throw an error
             //opts.user.profile.frappe_login = true;
             //error on frappe login
@@ -152,8 +180,7 @@ const frappe_logout = function(cookies){
 
 const frappe_login = function(user, pwd){
   try {
-    const result = HTTP.call("POST", get_frappe_url_login(),
-                         {params: {usr: user, pwd: pwd}});
+    const result = HTTP.call("POST", get_frappe_url_login(), {params: {usr: user, pwd: pwd}});
     Meteor.users.update({_id:this.userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": true}});
     return result;
   } catch (e) {

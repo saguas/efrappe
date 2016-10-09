@@ -32,6 +32,11 @@ Reaction.registerPackage({
       route: "index",
       name: "index",
       template: "products"
+    },
+    {
+      route: "login",
+      name: "frappelogin",
+      template: "unauthorized"
     }
   ]
 });
