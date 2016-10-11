@@ -34,6 +34,22 @@ var hashPassword = function hashPassword(password) {                            
 };
 
 
+const get_cookies_name = function(){
+  const cookies_name = ["system_user", "sid", "full_name", "user_id", "user_image"];
+  return cookies_name;
+}
+
+
+const reset_cookies = function(cookies){
+  const ck = [];
+  for (cookie of cookies){
+    ck.push[cookie + "=;"];
+  }
+
+  return ck;
+}
+
+
 //console.log("hash password ", Accounts);
 
 const get_frappe_admin_username = function(){
@@ -71,6 +87,9 @@ Accounts.validateLoginAttempt((opts) => {
             console.log("error: ");
             throw new Meteor.Error("8888");
          }
+     }if(opts.type === "resume" && opts.allowed && opts.methodName === "login" && opts.user && opts.user.profile.frappe_login == false){
+       console.log("user was logged out with frappe_login = false!");
+       return false;
      }else if(!opts.allowed){
       return false;
      }
@@ -91,18 +110,27 @@ Accounts.onLoginFailure((opts) => {
 });
 
 Accounts.onLogout((opts) => {
+  console.log("on logout opts: ", opts);
+  /*if(opts && opts.user){
+    const userId = opts.user._id;
+    const cookies = reset_cookies(get_cookies_name());
+    Meteor.users.update({_id: userId}, {$set:{"profile.cookies": cookies, "profile.frappe_login": false}});
+  }*/
+});
+
+/*Accounts.onLogout((opts) => {
     console.log("on logout opts: ", opts);
     if (opts.user && opts.user.profile && opts.user.profile.frappe_login){
       const result = frappe_logout.call({userId: opts.user._id});
       console.log("on logout from frappe result: ", result);
       return result;
     }else{
-      console.log("Not logged out from frappe.");
+      console.log("Not necessary to logged out from frappe.");
     }
 
     //if(result.headers)
       //Meteor.users.update({_id: opts.user._id}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": false}});
-  });
+  });*/
 
 /*if(Hooks){
   //on meteor login, login into frappe

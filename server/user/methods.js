@@ -46,7 +46,7 @@ Meteor.methods(
       const change = changePassword.bind(this);
       return change(userId, newpwd);
     },
-    logoutFromFrappe: function(useremail){
+    logoutFromFrappe2: function(useremail){
       check(useremail, String);
       this.unblock();
 
@@ -61,5 +61,10 @@ Meteor.methods(
 
       const userdoc = Meteor.users.findOne({"emails.address": {"$in": [useremail]}});
       Meteor.users.update({_id: userdoc._id}, {$set:{"profile.frappe_login": false}});
+    },
+    logoutFromFrappe: function(){
+      //currently not in use
+      console.log("logout from frappe for user ", this.userId);
+      //Meteor.users.update({_id: this.userId}, {$set:{"profile.frappe_login": false}});
     }
 });

@@ -90,9 +90,9 @@ Tracker.autorun(function () {
       set_cookies(get_cookies_name());
     }
 
-    if(profile && profile.frappe_login === false){
+    /*if(profile && profile.frappe_login === false){
       Meteor.logout();
-    }
+    }*/
   }
 });
 
