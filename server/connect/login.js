@@ -89,7 +89,8 @@ Accounts.validateLoginAttempt((opts) => {
          }
      }if(opts.type === "resume" && opts.allowed && opts.methodName === "login" && opts.user && opts.user.profile.frappe_login == false){
        console.log("user was logged out with frappe_login = false!");
-       return false;
+       //return false;
+       throw new Meteor.Error("6565", "User was logged out by frappe logout.");
      }else if(!opts.allowed){
       return false;
      }
