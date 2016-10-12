@@ -96,6 +96,7 @@ Accounts.validateLoginAttempt((opts) => {
     return true;
 });
 
+//If some validateLoginAttempt fail and we aready made login to frappe, logout from frappe.
 Accounts.onLoginFailure((opts) => {
     console.log("onLoginFailure opts: ", opts);
     if(opts.type === "password" && !opts.allowed && opts.methodName === "login" && opts.user && opts.error.error !== "8888"){
@@ -109,28 +110,37 @@ Accounts.onLoginFailure((opts) => {
     }
 });
 
+//When we logout from reaction we need to logout from frappe.
 Accounts.onLogout((opts) => {
   console.log("on logout opts: ", opts);
-  /*if(opts && opts.user){
+  if(opts && opts.user && opts.user.profile && opts.user.profile.frappe_login == true){
     const userId = opts.user._id;
-    const cookies = reset_cookies(get_cookies_name());
-    Meteor.users.update({_id: userId}, {$set:{"profile.cookies": cookies, "profile.frappe_login": false}});
-  }*/
-});
-
-/*Accounts.onLogout((opts) => {
-    console.log("on logout opts: ", opts);
-    if (opts.user && opts.user.profile && opts.user.profile.frappe_login){
-      const result = frappe_logout.call({userId: opts.user._id});
-      console.log("on logout from frappe result: ", result);
-      return result;
+    //userdoc = Meteor.users.findOne({_id:userId}, {fields:{"profile.cookies":1}});
+    console.log("userId on logout is", userId);
+    const result = frappe_logout.call({userId: userId});
+    //console.log("onlogout result of frappe is ", result);
+    /*if(result && result.headers["set-cookie"]){
+      Meteor.users.update({_id: userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": false}});
     }else{
-      console.log("Not necessary to logged out from frappe.");
-    }
-
-    //if(result.headers)
-      //Meteor.users.update({_id: opts.user._id}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": false}});
-  });*/
+      const cookies = reset_cookies(get_cookies_name());
+      Meteor.users.update({_id: userId}, {$set:{"profile.cookies": cookies, "profile.frappe_login": false}});
+    }*/
+    /*const headers = {};
+    const cookie;
+    userdoc = Meteor.users.findOne({_id:userId}, {fields:{"profile.cookies":1}});
+    if (!userdoc)//if not cookie then no login was made
+      return {data:{message: "Not Logged Out. User not loggin in.", error_status: false}};
+    cookie = userdoc.profile.cookies;
+    headers.Cookie = cookie;
+    const result = HTTP.call("POST", get_frappe_url_logout(), {headers: headers, data:{efrappe:{origin: "efrappe"}}});
+    if(result.headers["set-cookie"]){
+      Meteor.users.update({_id: userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": false}});
+    }else{
+      const cookies = reset_cookies(get_cookies_name());
+      Meteor.users.update({_id: userId}, {$set:{"profile.cookies": cookies, "profile.frappe_login": false}});
+    }*/
+  }
+});
 
 /*if(Hooks){
   //on meteor login, login into frappe
@@ -183,9 +193,6 @@ const get_frappe_url_login = function(){
 
 const frappe_logout = function(cookies){
   try {
-    //const result = _frappe_logout.call(this, cookies);
-    //Meteor.users.update({_id: this.userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": false}});
-    //return result;
     const headers = {};
     let cookie = cookies;
     const userId = this.userId;
@@ -197,8 +204,12 @@ const frappe_logout = function(cookies){
     }
     headers.Cookie = cookie;
     const result = HTTP.call("POST", get_frappe_url_logout(), {headers: headers, data:{efrappe:{origin: "efrappe"}}});
-    if(result.headers["set-cookie"])
+    if(result.headers["set-cookie"]){
       Meteor.users.update({_id: userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": false}});
+    }else{
+      const cookies = reset_cookies(get_cookies_name());
+      Meteor.users.update({_id: userId}, {$set:{"profile.cookies": cookies, "profile.frappe_login": false}});
+    }
     return result;
   } catch (e) {
     // Got a network error, time-out or HTTP error in the 400 or 500 range.
