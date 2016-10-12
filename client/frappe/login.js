@@ -1,5 +1,6 @@
 import { Meteor } from "meteor/meteor";
 import { EJSON } from 'meteor/ejson';
+import { Accounts } from 'meteor/accounts-base';
 import { Tracker } from 'meteor/tracker';
 import { eFrappe } from "../../lib";
 import { Router } from "/client/api";
