@@ -63,13 +63,30 @@ const get_frappe_admin_username = function(){
 }
 
 
+const get_frappe_admin_password = function(){
+  let REACTION_AUTH;
+
+  if (Meteor.settings && Meteor.settings.reaction) {
+     REACTION_AUTH = Meteor.settings.reaction.REACTION_AUTH;
+  }
+
+  return REACTION_AUTH;
+}
+
+
 Accounts.validateLoginAttempt((opts) => {
     console.log("on validateLoginAttempt opts: ", opts);
-    if(opts.type === "password" && opts.allowed && opts.methodName === "login" && opts.user){
+    if(opts.type === "password" && opts.allowed && (opts.methodName === "login" || opts.methodName === "createUser") && opts.user){
          let shopid = Reaction.getShopId();
          const isadmin = _.find(opts.user.roles[shopid], function(a){return a === "admin"});
          let password = opts.methodArguments[0].password.digest;
-         let username = opts.methodArguments[0].user.email;
+         let username;
+         if(opts.methodArguments[0].user){
+           username = opts.methodArguments[0].user.email;
+         }else if(opts.methodArguments[0].email){
+           username = opts.methodArguments[0].email;
+         }
+
          if(isadmin){
             username = get_frappe_admin_username();
          }
@@ -193,7 +210,8 @@ const get_frappe_url_login = function(){
 
 
 const frappe_logout = function(cookies){
-  try {
+  //try {
+    /*
     const headers = {};
     let cookie = cookies;
     const userId = this.userId;
@@ -205,29 +223,69 @@ const frappe_logout = function(cookies){
     }
     headers.Cookie = cookie;
     const result = HTTP.call("POST", get_frappe_url_logout(), {headers: headers, data:{efrappe:{origin: "efrappe"}}});
-    if(result.headers["set-cookie"]){
+    */
+    const userId = this.userId;
+    const result = frappe_logout_only.call(this, cookies);
+    if(result && result.headers && result.headers["set-cookie"]){
       Meteor.users.update({_id: userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": false}});
     }else{
       const cookies = reset_cookies(get_cookies_name());
       Meteor.users.update({_id: userId}, {$set:{"profile.cookies": cookies, "profile.frappe_login": false}});
     }
     return result;
-  } catch (e) {
+  /*} catch (e) {
     // Got a network error, time-out or HTTP error in the 400 or 500 range.
     return {data:{message: "Not Logged Out", error_status: true, error_msg: e}};
-  }
+  }*/
 }
 
 const frappe_login = function(user, pwd){
   try {
-    const result = HTTP.call("POST", get_frappe_url_login(), {params: {usr: user, pwd: pwd}});
-    Meteor.users.update({_id:this.userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": true}});
+    //const result = HTTP.call("POST", get_frappe_url_login(), {params: {usr: user, pwd: pwd}});
+    const result = frappe_login_only(user, pwd);
+    if(result && result.headers && result.headers["set-cookie"]){
+      Meteor.users.update({_id:this.userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": true}});
+    }
     return result;
   } catch (e) {
     // Got a network error, time-out or HTTP error in the 400 or 500 range.
     return {data:{message: "Not Logged In", error_status: true, error_msg: e}};
   }
 }
+
+
+const frappe_logout_only = function(cookies){
+  try {
+    const headers = {};
+    let cookie = cookies;
+    if(!cookie){
+      const userId = this.userId;
+      userdoc = Meteor.users.findOne({_id:userId}, {fields:{"profile.cookies":1}});
+      if (!userdoc)//if not cookie then no login was made
+        return {data:{message: "Not Logged Out. User not loggin in.", error_status: false}};
+      cookie = userdoc.profile.cookies;
+    }
+    headers.Cookie = cookie;
+    const result = HTTP.call("POST", get_frappe_url_logout(), {headers: headers, data:{efrappe:{origin: "efrappe"}}});
+    return result;
+  }catch (e) {
+    // Got a network error, time-out or HTTP error in the 400 or 500 range.
+    return {data:{message: "Not Logged Out", error_status: true, error_msg: e}};
+  }
+
+}
+
+const frappe_login_only = function(user, pwd){
+  try {
+    const result = HTTP.call("POST", get_frappe_url_login(), {params: {usr: user, pwd: pwd}});
+    //Meteor.users.update({_id:this.userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": true}});
+    return result;
+  } catch (e) {
+    // Got a network error, time-out or HTTP error in the 400 or 500 range.
+    return {data:{message: "Not Logged In", error_status: true, error_msg: e}};
+  }
+}
+
 
 Meteor.methods(
   {
@@ -246,6 +304,12 @@ Meteor.methods(
     }
 });
 
+eFrappe.get_frappe_admin_password = get_frappe_admin_password;
+eFrappe.get_frappe_admin_username = get_frappe_admin_username;
 eFrappe.frappeLogin = frappe_login;
+eFrappe.frappe_login_only = frappe_login_only;
 eFrappe.frappeLogout = frappe_logout;
+eFrappe.frappe_logout_only = frappe_logout_only;
 eFrappe.get_frappe_url = get_frappe_url;
+eFrappe.hashPassword = hashPassword;
+eFrappe.getPasswordString = getPasswordString;

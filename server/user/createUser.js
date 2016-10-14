@@ -3,17 +3,18 @@ import { Random } from 'meteor/random';
 import { Accounts } from 'meteor/accounts-base';
 import { Reaction, Hooks, Logger } from "/server/api";
 import { merge, uniqWith } from "lodash";
+import { eFrappe } from "../";
 
 
 
 const get_frappe_url_update_password = function(){
-  return eFrappe.get_frappe_url() + "/api/method/update_password";
+  return eFrappe.get_frappe_url() + "/api/method/frappe.core.doctype.user.user.update_password";
 }
 
 
-const frappe_update_password = function(new_password, key, old_password){
+const frappe_update_password = function(headers, new_password, key, old_password){
   try {
-    const result = HTTP.call("POST", get_frappe_url_update_password(), {params: {new_password: new_password, key: key, old_password: old_password}, data:{efrappe:{origin: "efrappe"}}});
+    const result = HTTP.call("POST", get_frappe_url_update_password(), {headers: headers, params: {new_password: new_password, key: key, old_password: old_password}, data:{efrappe:{origin: "efrappe"}}});
     return result;
   } catch (e) {
     // Got a network error, time-out or HTTP error in the 400 or 500 range.
@@ -28,9 +29,9 @@ const get_frappe_url_create_user = function(){
 }
 
 
-const frappe_create_user = function(data){
+const frappe_create_user = function(data, headers){
   try {
-    const result = HTTP.call("POST", get_frappe_url_create_user(), {params: {data: data}});
+    const result = HTTP.call("POST", get_frappe_url_create_user(), {headers: headers, data: data});
     return result;
   } catch (e) {
     // Got a network error, time-out or HTTP error in the 400 or 500 range.
@@ -44,6 +45,7 @@ if (Hooks) {
   Hooks.Events.add("onCreateUser", (user, options) => {
       const group = Reaction.getShopId();
       console.log("onCreateUser options: ", options);
+      console.log("onCreateUser user: ", user);
       console.log("onCreateUser shopId: ", group);
       if(options.services && options.services.anonymous === true)
         return user;
@@ -56,17 +58,28 @@ if (Hooks) {
       const name = email.split("@")[0];
       const data = {
                     "first_name": name,
-                    "last_name": name, "email": email,
+                    "last_name": name,
+                    "email": email,
                     "username": user.username || name,
                     "send_welcome_email": false,
-                    "reset_password_key": reset_password_key
+                    "reset_password_key": reset_password_key,
+                    "user_type": "Website User"
                    };
-      //here call frappe rest api
-      frappe_create_user(data);
-      //here call POST: frappe.core.doctype.user.user.update_password
-      frappe_update_password(user.password, reset_password_key);
 
-      return user;
+     //we needd login as Administrator
+     const adminuser = eFrappe.get_frappe_admin_username();
+     const adminpass = eFrappe.getPasswordString(eFrappe.get_frappe_admin_password());
+     const login_result = eFrappe.frappe_login_only(adminuser, adminpass);
+     const headers = {Cookie: login_result.headers["set-cookie"]};
+     //here call frappe rest api
+     frappe_create_user(data, headers);
+     //here call POST: frappe.core.doctype.user.user.update_password
+     frappe_update_password(headers, options.password.digest, reset_password_key);
+
+     //make logout
+     const result = eFrappe.frappe_logout_only.call({userId: null}, headers.Cookie);
+
+     return user;
   });
 }
 
