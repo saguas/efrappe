@@ -104,7 +104,41 @@ Accounts.validateLoginAttempt((opts) => {
             console.log("error: ");
             throw new Meteor.Error("8888");
          }
-     }if(opts.type === "resume" && opts.allowed && opts.methodName === "login" && opts.user && opts.user.profile.frappe_login == false){
+     }else if(opts.type === "resume" && opts.allowed && opts.methodName === "login" && opts.user && opts.user.profile.frappe_login == true){
+       //Here frappe session timeout, we need to logout from reaction.
+        const userId = opts.user._id;
+        //if empty emails probably is anonymous user.
+        if (opts.user.emails.length === 0)
+          return true;
+
+        const userdoc = Meteor.users.findOne({_id:userId}, {fields:{"profile.cookies":1}});
+
+        if (!userdoc)//if not cookie then no login was made
+          return false;
+
+        const headers = {};
+        let cookie = userdoc.profile.cookies;
+
+        if(!cookie)
+          cookie = reset_cookies(get_cookies_name());
+          //return false;
+
+        headers.Cookie = cookie;
+        try{
+          const result = HTTP.call("GET", get_frappe_url_logged_user(), {headers: headers, data:{efrappe:{origin: "efrappe"}}});
+          console.log("result in validation login get logged user ", result, result.content.session_expired);
+          const result_content = EJSON.parse(result.content);
+          const session_expired = result_content.session_expired || 0;
+          if (result && (result.statusCode !== 200 || session_expired == 1))
+            throw new Meteor.Error("6565", "User was logged out by frappe logout.");
+
+          return true;
+        }catch(e){
+          console.log("validateLoginAttempt: Error in get logged user. ", e);
+          throw new Meteor.Error("6565", "User was logged out by frappe logout.");
+        }
+
+     }else if(opts.type === "resume" && opts.allowed && opts.methodName === "login" && opts.user && opts.user.profile.frappe_login == false){
        console.log("user was logged out with frappe_login = false!");
        //return false;
        throw new Meteor.Error("6565", "User was logged out by frappe logout.");
@@ -208,6 +242,10 @@ const get_frappe_url_login = function(){
   return get_frappe_url() + "/api/method/login";
 }
 
+const get_frappe_url_logged_user = function(){
+  //return get_frappe_url() + "/api/method/frappe.auth.get_logged_user";
+  return get_frappe_url() + "/api/method/refrappe.utils.users.get_logged_user";
+}
 
 const frappe_logout = function(cookies){
   //try {
