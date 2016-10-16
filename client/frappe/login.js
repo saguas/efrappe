@@ -6,12 +6,34 @@ import { eFrappe } from "../../lib";
 import { Router } from "/client/api";
 
 
-
-Router.Hooks.onEnter("efrappe/desk", function(ctx){
-  console.log("enter /reaction/desk ctx: ", ctx);
-  //location.href="http://localhost:8888/desk";
-  location.href=`${location.origin}/desk`;
+//this all schema is because firefox redirect several times before to go to frappe desk
+Router.Hooks.onEnter("efrappe/desk", function(ctx, redirect, stop){
+  console.log("enter /reaction/desk ctx: ", ctx, redirect, stop);
+  trackRouteEntry(ctx, redirect, stop);
 });
+
+function trackRouteEntry(context, redirect, stop) {
+  // context is the output of `FlowRouter.current()`
+  console.log("trackRouteEntry: enter /reaction/desk ", context);
+  redirect('/desk');
+  window.location.replace(`${location.origin}/desk`);
+}
+
+function trackRouteEntryDesk(context, redirect, stop) {
+  // context is the output of `FlowRouter.current()`
+  console.log("trackRouteEntry: enter /desk ", context);
+  stop();
+}
+
+FlowRouter.route('/desk', {
+  // calls just before the action
+  triggersEnter: [trackRouteEntryDesk],
+});
+
+/*FlowRouter.route('/reaction/desk', {
+  // calls just before the action
+  triggersEnter: [trackRouteEntry],
+});*/
 
 /*
 //observe every path change!
