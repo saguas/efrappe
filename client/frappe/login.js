@@ -6,6 +6,7 @@ import { eFrappe } from "../../lib";
 import { Router } from "/client/api";
 
 
+
 //this all schema is because firefox redirect several times before to go to frappe desk
 Router.Hooks.onEnter("efrappe/desk", function(ctx, redirect, stop){
   console.log("enter /reaction/desk ctx: ", ctx, redirect, stop);
