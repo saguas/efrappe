@@ -78,9 +78,6 @@ const __frappe_login = function(userId, username, password){
   const result = frappe_login.call({userId: userId}, username, password);
   console.log("on login frappe result: ", result);
   if(result && result.statusCode === 200 && result.data && result.data.error_status !== true){
-     //if success return opts else throw an error
-     //opts.user.profile.frappe_login = true;
-     //error on frappe login
      return true;
   }else if(result && result.error_status){
      console.log("error: ", result.data.error_msg, result.data.message);
@@ -93,96 +90,110 @@ const __frappe_login = function(userId, username, password){
 
 Accounts.validateLoginAttempt((opts) => {
     console.log("on validateLoginAttempt opts: ", opts);
-    if(opts.type === "password" && opts.allowed && (opts.methodName === "login" || opts.methodName === "createUser") && opts.user){
-         const shopid = Reaction.getShopId();
-         const isadmin = _.find(opts.user.roles[shopid], function(a){return a === "admin"});
-         const password = opts.methodArguments[0].password.digest;
-         let username;
-         if(opts.methodArguments[0].user){
-           username = opts.methodArguments[0].user.email;
-         }else if(opts.methodArguments[0].email){
-           username = opts.methodArguments[0].email;
-         }
 
-         if(isadmin){
-            username = get_frappe_admin_username();
-         }
-         return __frappe_login(opts.user._id, username, password);
-     }else if(opts.type === "resume" && opts.allowed && opts.methodName === "login" && opts.user && opts.user.profile.frappe_login == true){
-       //Here frappe session timeout, we need to logout from reaction.
-        const userId = opts.user._id;
-        //if empty emails probably is anonymous user.
-        if (opts.user.emails.length === 0)
-          return true;
-
-        const userdoc = Meteor.users.findOne({_id:userId}, {fields:{"profile.cookies":1}});
-
-        if (!userdoc)//if not cookie then no login was made
-          return false;
-
-        const headers = {};
-        let cookie = userdoc.profile.cookies;
-
-        if(!cookie)
-          cookie = reset_cookies(get_cookies_name());
-          //return false;
-
-        headers.Cookie = cookie;
-        try{
-          const result = HTTP.call("GET", get_frappe_url_logged_user(), {headers: headers, data:{efrappe:{origin: "efrappe"}}});
-          //console.log("result in validation login get logged user ", result, result.content.session_expired);
-          console.log("result in validation login get logged user ", result, result.data.session_expired);
-          //const result_content = EJSON.parse(result.content);
-          //const session_expired = result_content.session_expired || 0;
-          const session_expired = result.data.session_expired || 0;
-          if (result && (result.statusCode !== 200 || session_expired == 1))
-            throw new Meteor.Error("6565", "User was logged out by frappe logout.");
-
-          return true;
-        }catch(e){
-          console.log("validateLoginAttempt: Error in get logged user. ", e);
-          throw new Meteor.Error("6565", "User was logged out by frappe logout.");
-        }
-
-     }else if(opts.type === "resume" && opts.allowed && opts.methodName === "login" && opts.user && opts.user.profile.frappe_login == false){
-       console.log("user was logged out with frappe_login = false!");
-       //return false;
-       throw new Meteor.Error("6565", "User was logged out by frappe logout.");
-     }else if(opts.type === "password" && opts.allowed && opts.methodName === "resetPassword" && opts.user){
-       const shopid = Reaction.getShopId();
-       const password = opts.methodArguments[1].digest;
-       let email = opts.user.emails[0].address;
-       const isadmin = _.find(opts.user.roles[shopid], function(a){return a === "admin"});
-
-       if(isadmin){
-          email = get_frappe_admin_username();
-       }
-
-       //const userId = opts.user._id;
-       //headers.Cookie = reset_cookies(get_cookies_name());
-
-       try{
-
-         const headers = frappe_login_admin_only();
-         const result = HTTP.call("POST", get_frappe_url_resetPassword(), {params: {"email": email, "new_password": password}, headers: headers, data:{efrappe:{origin: "efrappe"}}});
-         console.log("result in validation resetpassword from frappe ", result);
-
-         //make logout
-         frappe_logout_only.call({userId: null}, headers.Cookie);
-
-         //login new user in frappe.
-         return __frappe_login(opts.user._id, email, password);
-
-         //return true;
-       }catch(e){
-         console.log("validateLoginAttempt resetPassWord: Error. ", e);
-         throw new Meteor.Error("6566", "Reset Password Error.");
-       }
-
-     }else if(!opts.allowed){
+    if(!opts.allowed){
       return false;
-     }
+    }
+
+    if (opts.user){
+      if(opts.type === "password"){
+          if(opts.methodName === "login" || opts.methodName === "createUser"){
+               const shopid = Reaction.getShopId();
+               const isadmin = _.find(opts.user.roles[shopid], function(a){return a === "admin"});
+               const password = opts.methodArguments[0].password.digest;
+               let username;
+               if(opts.methodArguments[0].user){
+                 username = opts.methodArguments[0].user.email;
+               }else if(opts.methodArguments[0].email){
+                 username = opts.methodArguments[0].email;
+               }
+
+               if(isadmin){
+                  username = get_frappe_admin_username();
+               }
+               return __frappe_login(opts.user._id, username, password);
+
+           }else if(opts.methodName === "resetPassword"){
+               const shopid = Reaction.getShopId();
+               const password = opts.methodArguments[1].digest;
+               let email = opts.user.emails[0].address;
+               const isadmin = _.find(opts.user.roles[shopid], function(a){return a === "admin"});
+
+               if(isadmin){
+                  email = get_frappe_admin_username();
+               }
+
+               //const userId = opts.user._id;
+               //headers.Cookie = reset_cookies(get_cookies_name());
+
+               try{
+
+                 const headers = frappe_login_admin_only();
+                 const result = HTTP.call("POST", get_frappe_url_resetPassword(), {params: {"email": email, "new_password": password}, headers: headers, data:{efrappe:{origin: "efrappe"}}});
+                 console.log("result in validation resetpassword from frappe ", result);
+
+                 //make logout
+                 frappe_logout_only.call({userId: null}, headers.Cookie);
+
+                 //login new user in frappe.
+                 return __frappe_login(opts.user._id, email, password);
+
+                 //return true;
+               }catch(e){
+                 console.log("validateLoginAttempt resetPassWord: Error. ", e);
+                 throw new Meteor.Error("6566", "Reset Password Error.");
+               }
+           }
+         }else if(opts.type === "resume"){
+
+            if(opts.methodName === "login" && opts.user.profile.frappe_login == true){
+             //Here frappe session timeout, we need to logout from reaction.
+              const userId = opts.user._id;
+              //if empty emails probably is anonymous user.
+              if (opts.user.emails.length === 0)
+                return true;
+
+              const userdoc = Meteor.users.findOne({_id:userId}, {fields:{"profile.cookies":1}});
+
+              if (!userdoc)//if not cookie then no login was made
+                return false;
+
+              const headers = {};
+              let cookie = userdoc.profile.cookies;
+
+              if(!cookie)
+                cookie = reset_cookies(get_cookies_name());
+                //return false;
+
+              headers.Cookie = cookie;
+              try{
+                const result = HTTP.call("GET", get_frappe_url_logged_user(), {headers: headers, data:{efrappe:{origin: "efrappe"}}});
+                //console.log("result in validation login get logged user ", result, result.content.session_expired);
+                console.log("result in validation login get logged user ", result, result.data.session_expired);
+                //const result_content = EJSON.parse(result.content);
+                //const session_expired = result_content.session_expired || 0;
+                const session_expired = result.data.session_expired || 0;
+                if (result && (result.statusCode !== 200 || session_expired == 1))
+                  throw new Meteor.Error("6565", "User was logged out by frappe logout.");
+
+                return true;
+              }catch(e){
+                console.log("validateLoginAttempt: Error in get logged user. ", e);
+                throw new Meteor.Error("6565", "User was logged out by frappe logout.");
+              }
+
+           }else if(opts.methodName === "login" && opts.user.profile.frappe_login == false){
+             console.log("user was logged out with frappe_login = false!");
+             //return false;
+             throw new Meteor.Error("6565", "User was logged out by frappe logout.");
+           }
+        }
+    }
+
     return true;
+
+
+    //return true;
 });
 
 //If some validateLoginAttempt fail and we aready made login to frappe, logout from frappe.
@@ -221,7 +232,7 @@ Accounts.onLogout((opts) => {
       return {data:{message: "Not Logged Out. User not loggin in.", error_status: false}};
     cookie = userdoc.profile.cookies;
     headers.Cookie = cookie;
-    const result = HTTP.call("POST", get_frappe_url_logout(), {headers: headers, data:{efrappe:{origin: "efrappe"}}});
+    const result = HTTP.call("POST", get_frappe_url_logout(), {headers: headers, frappe:{efrappe:{origin: "efrappe"}}});
     if(result.headers["set-cookie"]){
       Meteor.users.update({_id: userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": false}});
     }else{
@@ -302,7 +313,7 @@ const frappe_logout = function(cookies){
       cookie = userdoc.profile.cookies;
     }
     headers.Cookie = cookie;
-    const result = HTTP.call("POST", get_frappe_url_logout(), {headers: headers, data:{efrappe:{origin: "efrappe"}}});
+    const result = HTTP.call("POST", get_frappe_url_logout(), {headers: headers, frappe:{efrappe:{origin: "efrappe"}}});
     */
     const userId = this.userId;
     const result = frappe_logout_only.call(this, cookies);

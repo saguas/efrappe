@@ -23,15 +23,29 @@ const frappe_update_password = function(headers, new_password, key, old_password
 }
 
 
-
+//API to User CRUD
 const get_frappe_url_create_user = function(){
-  return eFrappe.get_frappe_url() + "/api/resource/User";
+  //return eFrappe.get_frappe_url() + "/api/resource/User";
+  return get_frappe_url_CRUD("User");
+
+}
+
+const get_frappe_url_CRUD = function(doctype, name){
+  if (name && doctype){
+    return eFrappe.get_frappe_url() + "/api/resource/${doctype}/${name}";
+  }else if(doctype){
+    return eFrappe.get_frappe_url() + "/api/resource/${doctype}";
+  }
+
+  return
 }
 
 
 const frappe_create_user = function(data, headers){
+  console.log("on frappe create user ", get_frappe_url_create_user(), headers, data);
   try {
-    const result = HTTP.call("POST", get_frappe_url_create_user(), {headers: headers, data: data});
+    const result = HTTP.call("POST", get_frappe_url_create_user(), {headers: headers, data: data, params:{frappe:EJSON.stringify({efrappe:{origin: "efrappe"}})}});
+    console.log("on frappe create user2 ", result);
     return result;
   } catch (e) {
     // Got a network error, time-out or HTTP error in the 400 or 500 range.
@@ -44,9 +58,9 @@ const frappe_create_user = function(data, headers){
 if (Hooks) {
   Hooks.Events.add("onCreateUser", (user, options) => {
       const group = Reaction.getShopId();
-      console.log("onCreateUser options: ", options);
-      console.log("onCreateUser user: ", user);
-      console.log("onCreateUser shopId: ", group);
+      //console.log("onCreateUser options: ", options);
+      //console.log("onCreateUser user: ", user);
+      //console.log("onCreateUser shopId: ", group);
       if(options.services && options.services.anonymous === true)
         return user;
 
@@ -69,6 +83,10 @@ if (Hooks) {
      //we needd login as Administrator
      const adminuser = eFrappe.get_frappe_admin_username();
      const adminpass = eFrappe.getPasswordString(eFrappe.get_frappe_admin_password());
+
+     console.log("onCreateUser data: ", data);
+     console.log("onCreateUser adminuser: ", adminuser);
+     console.log("onCreateUser adminpass: ", adminpass);
      const login_result = eFrappe.frappe_login_only(adminuser, adminpass);
      const headers = {Cookie: login_result.headers["set-cookie"]};
      //here call frappe rest api
