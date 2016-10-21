@@ -64,6 +64,9 @@ if (Hooks) {
       if(options.services && options.services.anonymous === true)
         return user;
 
+      if(user && user.username === "admin")
+        return user;
+
       //create frappe insert user
       //POST http://frappe.local:8000/api/resource/User
       //generate random key with length 32
