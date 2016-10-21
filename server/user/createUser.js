@@ -32,9 +32,9 @@ const get_frappe_url_create_user = function(){
 
 const get_frappe_url_CRUD = function(doctype, name){
   if (name && doctype){
-    return eFrappe.get_frappe_url() + "/api/resource/${doctype}/${name}";
+    return eFrappe.get_frappe_url() + `/api/resource/${doctype}/${name}`;
   }else if(doctype){
-    return eFrappe.get_frappe_url() + "/api/resource/${doctype}";
+    return eFrappe.get_frappe_url() + `/api/resource/${doctype}`;
   }
 
   return
@@ -84,6 +84,7 @@ if (Hooks) {
      const adminuser = eFrappe.get_frappe_admin_username();
      const adminpass = eFrappe.getPasswordString(eFrappe.get_frappe_admin_password());
 
+     console.log("onCreateUser options: ", options);
      console.log("onCreateUser data: ", data);
      console.log("onCreateUser adminuser: ", adminuser);
      console.log("onCreateUser adminpass: ", adminpass);
