@@ -11,15 +11,18 @@ MethodHooks.after("cart/setShipmentAddress", function (options) {
     // or an empty object if there's no result yet.
     const result = options.result || {};
     if (typeof options.error === "undefined") {
-      let username;
-      const usernameParts = options.arguments[1].fullName.split(" ");
-      if(usernameParts.length > 1){
-        let lastnameIndex = usernameParts.length - 1;
-        username = `${usernameParts[0]} ${usernameParts[lastnameIndex]}`;
-      }else{
-        username = usernameParts[0];
+      const user = Meteor.user();
+      if(user && !user.username){
+          let username;
+          const usernameParts = options.arguments[1].fullName.split(" ");
+          if(usernameParts.length > 1){
+            let lastnameIndex = usernameParts.length - 1;
+            username = `${usernameParts[0]} ${usernameParts[lastnameIndex]}`;
+          }else{
+            username = usernameParts[0];
+          }
+          Meteor.users.update({_id: Meteor.userId()}, {$set: {username: username}});
       }
-      Meteor.users.update({_id: Meteor.userId()}, {$set: {username: username}});
     }
 
     return result;
