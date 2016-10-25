@@ -5,6 +5,18 @@ import { Tracker } from 'meteor/tracker';
 import { eFrappe } from "../../lib";
 import { Router } from "/client/api";
 
+/*
+Accounts.ui.config({
+  requestPermissions: {
+    facebook: ['user_likes'],
+    github: ['user', 'repo']
+  },
+  requestOfflineToken: {
+    google: true
+  },
+  passwordSignupFields: 'USERNAME_AND_OPTIONAL_EMAIL'
+});*/
+
 
 
 //this all schema is because firefox redirect several times before to go to frappe desk

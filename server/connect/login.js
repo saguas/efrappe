@@ -7,6 +7,22 @@ import { eFrappe } from "../";
 import bcrypt from "bcrypt";
 
 
+
+
+ServiceConfiguration.configurations.upsert(
+  { service: "google" },
+  {
+    $set: {
+      clientId: "42443623448-mn6ntl0dvu27stduntf02cjbe4j2kd19.apps.googleusercontent.com",
+      loginStyle: "popup",
+      secret: "_I2f7HWv9VTpZNNMXSGznnl9"
+    }
+  }
+);
+
+
+
+
 var SHA256 = Package.sha.SHA256;
 var bcryptHash = Meteor.wrapAsync(bcrypt.hash);
 

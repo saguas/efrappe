@@ -5,5 +5,6 @@ import "./connect/login.js";
 import "./user/createUser.js";
 import "./user/methods.js";
 import "./user/updateUser.js";
+import "./products/productsHooks.js";
 
 //Object.assign(Reaction.Collections, Collections);
