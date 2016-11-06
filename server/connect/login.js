@@ -288,12 +288,14 @@ Accounts.validateLoginAttempt((opts) => {
           const data = get_user_services_data(user);
 
           //login admin
+          /*
           const adminuser = get_frappe_admin_username();
           const adminpass = getPasswordString(get_frappe_admin_password());
 
           const login_result = frappe_login_only(adminuser, adminpass);
           const headers = {Cookie: login_result.headers["set-cookie"]};
-
+          */
+          const headers = frappe_login_admin_only();
           //get services login token
           const tokenObj = frappe_services_login(headers, "twitter");
 
@@ -306,7 +308,7 @@ Accounts.validateLoginAttempt((opts) => {
           //const state = {"token": token};
           const login_services_result = frappe_login_oauth_user(data, "twitter", token, 1);
 
-          check_frappe_result(login_services_result);
+          //check_frappe_result(login_services_result);
 
           const userId = opts.user._id;
 
@@ -321,12 +323,14 @@ Accounts.validateLoginAttempt((opts) => {
           const data = get_user_services_data(user);
 
           //login admin
+          /*
           const adminuser = get_frappe_admin_username();
           const adminpass = getPasswordString(get_frappe_admin_password());
 
           const login_result = frappe_login_only(adminuser, adminpass);
           const headers = {Cookie: login_result.headers["set-cookie"]};
-
+          */
+          const headers = frappe_login_admin_only();
           //get services login token
           const tokenObj = frappe_services_login(headers, "facebook");
 
@@ -339,7 +343,7 @@ Accounts.validateLoginAttempt((opts) => {
           //const state = {"token": token};
           const login_services_result = frappe_login_oauth_user(data, "facebook", token, 1);
 
-          check_frappe_result(login_services_result);
+          //check_frappe_result(login_services_result);
 
           const userId = opts.user._id;
 
@@ -359,12 +363,14 @@ Accounts.validateLoginAttempt((opts) => {
           const data = get_user_services_data(user);
 
           //login admin
+          /*
           const adminuser = get_frappe_admin_username();
           const adminpass = getPasswordString(get_frappe_admin_password());
 
           const login_result = frappe_login_only(adminuser, adminpass);
           const headers = {Cookie: login_result.headers["set-cookie"]};
-
+          */
+          const headers = frappe_login_admin_only();
           //get services login token
           const tokenObj = frappe_services_login(headers, "github");
 
@@ -377,7 +383,7 @@ Accounts.validateLoginAttempt((opts) => {
           //const state = {"token": token};
           const login_services_result = frappe_login_oauth_user(data, "github", token, 1);
 
-          check_frappe_result(login_services_result);
+          //check_frappe_result(login_services_result);
 
           const userId = opts.user._id;
 
