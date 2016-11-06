@@ -123,7 +123,8 @@ Tracker.autorun(function () {
     if (profile && profile.cookies){
       set_cookies(profile.cookies);
     }else{
-      set_cookies(get_cookies_name());
+      console.log("autorun.... ", user);
+      reset_cookies(get_cookies_name());
     }
 
     /*if(profile && profile.frappe_login === false){

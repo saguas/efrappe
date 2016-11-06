@@ -8,7 +8,7 @@ import bcrypt from "bcrypt";
 
 
 
-
+/*
 ServiceConfiguration.configurations.upsert(
   { service: "google" },
   {
@@ -18,7 +18,7 @@ ServiceConfiguration.configurations.upsert(
       secret: "_I2f7HWv9VTpZNNMXSGznnl9"
     }
   }
-);
+);*/
 
 
 
@@ -59,13 +59,29 @@ const get_cookies_name = function(){
 const reset_cookies = function(cookies){
   const ck = [];
   for (cookie of cookies){
-    ck.push[cookie + "=;"];
+    ck.push(cookie + "=;");
   }
 
   return ck;
 }
 
+const get_user_services_data = function(user){
+  const data = {};
 
+  data.id = user.id;
+  data.email = user.email;
+  data.verified_email = user.verified_email;
+  data.name = user.name;
+  data.given_name = user.given_name || user.first_name;
+  data.family_name = user.family_name || user.last_name;
+  data.picture = user.picture || user.avatar_url;
+  data.locale = user.locale;
+  data.expiresAt = user.expiresAt;
+  data.login = user.login;//github
+  data.gender = user.gender;
+
+  return data;
+}
 //console.log("hash password ", Accounts);
 
 const get_frappe_admin_username = function(){
@@ -90,11 +106,12 @@ const get_frappe_admin_password = function(){
 }
 
 
-const __frappe_login = function(userId, username, password){
-  const result = frappe_login.call({userId: userId}, username, password);
+const check_frappe_result = function(result){
   console.log("on login frappe result: ", result);
   if(result && result.statusCode === 200 && result.data && result.data.error_status !== true){
      return true;
+  }if(result && result.statusCode === 200 && !result.data){
+    return true;
   }else if(result && result.error_status){
      console.log("error: ", result.data.error_msg, result.data.message);
      throw new Meteor.Error("8888");
@@ -102,10 +119,17 @@ const __frappe_login = function(userId, username, password){
      console.log("error: ");
      throw new Meteor.Error("8888");
   }
+
+}
+
+const __frappe_login = function(userId, username, password){
+  const result = frappe_login.call({userId: userId}, username, password);
+  return check_frappe_result(result);
 }
 
 Accounts.validateLoginAttempt((opts) => {
     console.log("on validateLoginAttempt opts: ", opts);
+    console.log("on validateLoginAttempt methodArguments ", opts.methodArguments);
 
     if(!opts.allowed){
       return false;
@@ -203,6 +227,163 @@ Accounts.validateLoginAttempt((opts) => {
              //return false;
              throw new Meteor.Error("6565", "User was logged out by frappe logout.");
            }
+        }else if(opts.type === "google"){
+          const user = opts.user.services.google;
+          const data = get_user_services_data(user);
+
+          //login admin
+          const adminuser = get_frappe_admin_username();
+          const adminpass = getPasswordString(get_frappe_admin_password());
+
+          const login_result = frappe_login_only(adminuser, adminpass);
+          const headers = {Cookie: login_result.headers["set-cookie"]};
+
+          //get services login token
+          const tokenObj = frappe_services_login(headers, "google");
+
+
+          const token = tokenObj.data.message;
+          console.log("token from frappe ", tokenObj, token);
+          //logout admin
+          const result = frappe_logout_only.call({userId: null}, headers.Cookie);
+
+          //login as oauth_user
+          const login_services_result = frappe_login_oauth_user(data, "google", token, 1);
+
+          check_frappe_result(login_services_result);
+
+          const userId = opts.user._id;
+          //const login_token = login_services_result.data.login_token;
+
+          //const login_token_result = frappe_login_via_token(login_token);
+
+          //check_frappe_result(login_token_result);
+
+          /*const headerss = {};
+          headerss.Cookie = login_services_result.headers["set-cookie"];
+
+          const result_logged_user = HTTP.call("GET", get_frappe_url_logged_user(), {headers: headerss, data:{efrappe:{origin: "efrappe"}}});
+          //console.log("result in validation login get logged user ", result, result.content.session_expired);
+          console.log("result in validation login get logged user ", result_logged_user);
+          */
+
+          //update user cookies
+          if(login_services_result.headers && login_services_result.headers["set-cookie"]){
+            Meteor.users.update({_id: userId}, {$set:{"profile.cookies": login_services_result.headers["set-cookie"], "profile.frappe_login": true}});
+          }
+
+          return true;
+
+
+        }else if(opts.type === "twitter"){
+          /*************************************
+
+            NOTE: Not implemented in frappe!
+
+          **************************************/
+          const user = opts.user.services.twitter;
+          const data = get_user_services_data(user);
+
+          //login admin
+          const adminuser = get_frappe_admin_username();
+          const adminpass = getPasswordString(get_frappe_admin_password());
+
+          const login_result = frappe_login_only(adminuser, adminpass);
+          const headers = {Cookie: login_result.headers["set-cookie"]};
+
+          //get services login token
+          const tokenObj = frappe_services_login(headers, "twitter");
+
+
+          const token = tokenObj.data.message;
+          console.log("token from frappe ", tokenObj, token);
+          //logout admin
+          const result = frappe_logout_only.call({userId: null}, headers.Cookie);
+
+          //const state = {"token": token};
+          const login_services_result = frappe_login_oauth_user(data, "twitter", token, 1);
+
+          check_frappe_result(login_services_result);
+
+          const userId = opts.user._id;
+
+          if(login_services_result.headers && login_services_result.headers["set-cookie"]){
+            Meteor.users.update({_id: userId}, {$set:{"profile.cookies": login_services_result.headers["set-cookie"], "profile.frappe_login": true}});
+          }
+
+          return true;
+
+        }else if(opts.type === "facebook"){
+          const user = opts.user.services.facebook;
+          const data = get_user_services_data(user);
+
+          //login admin
+          const adminuser = get_frappe_admin_username();
+          const adminpass = getPasswordString(get_frappe_admin_password());
+
+          const login_result = frappe_login_only(adminuser, adminpass);
+          const headers = {Cookie: login_result.headers["set-cookie"]};
+
+          //get services login token
+          const tokenObj = frappe_services_login(headers, "facebook");
+
+
+          const token = tokenObj.data.message;
+          console.log("token from frappe ", tokenObj, token);
+          //logout admin
+          const result = frappe_logout_only.call({userId: null}, headers.Cookie);
+
+          //const state = {"token": token};
+          const login_services_result = frappe_login_oauth_user(data, "facebook", token, 1);
+
+          check_frappe_result(login_services_result);
+
+          const userId = opts.user._id;
+
+          if(login_services_result.headers && login_services_result.headers["set-cookie"]){
+            Meteor.users.update({_id: userId}, {$set:{"profile.cookies": login_services_result.headers["set-cookie"], "profile.frappe_login": true}});
+          }
+
+          return true;
+
+        }else if(opts.type === "github"){
+          /*************************************
+
+            NOTE: Not implemented in reaction yet!
+
+          **************************************/
+          const user = opts.user.services.github;
+          const data = get_user_services_data(user);
+
+          //login admin
+          const adminuser = get_frappe_admin_username();
+          const adminpass = getPasswordString(get_frappe_admin_password());
+
+          const login_result = frappe_login_only(adminuser, adminpass);
+          const headers = {Cookie: login_result.headers["set-cookie"]};
+
+          //get services login token
+          const tokenObj = frappe_services_login(headers, "github");
+
+
+          const token = tokenObj.data.message;
+          console.log("token from frappe ", tokenObj, token);
+          //logout admin
+          const result = frappe_logout_only.call({userId: null}, headers.Cookie);
+
+          //const state = {"token": token};
+          const login_services_result = frappe_login_oauth_user(data, "github", token, 1);
+
+          check_frappe_result(login_services_result);
+
+          const userId = opts.user._id;
+
+          if(login_services_result.headers && login_services_result.headers["set-cookie"]){
+            Meteor.users.update({_id: userId}, {$set:{"profile.cookies": login_services_result.headers["set-cookie"], "profile.frappe_login": true}});
+          }
+
+          return true;
+
         }
     }
 
@@ -316,6 +497,57 @@ const get_frappe_url_resetPassword = function(){
   return get_frappe_url() + "/api/method/refrappe.utils.users.reset_password";
 }
 
+
+const get_frappe_url_services_login = function(){
+  //return get_frappe_url() + "/api/method/frappe.auth.get_logged_user";
+  return get_frappe_url() + "/api/method/refrappe.utils.integration.getIntegrationToken";
+}
+
+const get_frappe_login_oauth_user = function(){
+  //return get_frappe_url() + "/api/method/frappe.auth.get_logged_user";
+  return get_frappe_url() + "/api/method/frappe.www.login.login_oauth_user";
+}
+
+
+const get_frappe_login_via_token = function(){
+  //return get_frappe_url() + "/api/method/frappe.auth.get_logged_user";
+  return get_frappe_url() + "/api/method/frappe.www.login.login_via_token";
+}
+
+const frappe_login_via_token = function(login_token){
+  try {
+    const result = HTTP.call("GET", get_frappe_login_via_token(), {params: {login_token: login_token}});
+    return result;
+  } catch (e) {
+    // Got a network error, time-out or HTTP error in the 400 or 500 range.
+    return {data:{message: "Frappe Integration login_via_token error.", error_status: true, error_msg: e}};
+  }
+}
+
+const frappe_login_oauth_user = function(data, provider, state, generate_login_token){
+  try {
+    //const result = HTTP.call("GET", get_frappe_login_oauth_user(), {params: {data: EJSON.stringify(data), provider: provider, state: EJSON.stringify(state)}, data:{efrappe:{origin: "efrappe"}}});
+    data.efrappe = {origin: "efrappe"};
+    const result = HTTP.call("GET", get_frappe_login_oauth_user(), {params: {data: EJSON.stringify(data), provider: provider, state: EJSON.stringify(state), generate_login_token: generate_login_token}});
+    return result;
+  } catch (e) {
+    // Got a network error, time-out or HTTP error in the 400 or 500 range.
+    return {data:{message: "Frappe Integration login_oauth_user error.", error_status: true, error_msg: e}};
+  }
+}
+
+
+const frappe_services_login = function(headers, provider){
+  try {
+    const result = HTTP.call("GET", get_frappe_url_services_login(), {headers: headers, params: {provider: provider}, data:{efrappe:{origin: "efrappe"}}});
+    return result;
+  } catch (e) {
+    // Got a network error, time-out or HTTP error in the 400 or 500 range.
+    return {data:{message: "Frappe Integration getIntegrationToken error.", error_status: true, error_msg: e}};
+  }
+}
+
+
 const frappe_logout = function(cookies){
   //try {
     /*
@@ -333,12 +565,18 @@ const frappe_logout = function(cookies){
     */
     const userId = this.userId;
     const result = frappe_logout_only.call(this, cookies);
-    if(result && result.headers && result.headers["set-cookie"]){
-      Meteor.users.update({_id: userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": false}});
+    console.log("logout result ", result);
+    check_frappe_result(result);
+    const resetcookies = reset_cookies(get_cookies_name());
+    Meteor.users.update({_id: userId}, {$set:{"profile.cookies": resetcookies, "profile.frappe_login": false}});
+    /*if(result && result.headers && result.headers["set-cookie"]){
+      //Meteor.users.update({_id: userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": false}});
+      const cookies = reset_cookies(get_cookies_name());
+      Meteor.users.update({_id: userId}, {$set:{"profile.cookies": cookies, "profile.frappe_login": false}});
     }else{
       const cookies = reset_cookies(get_cookies_name());
       Meteor.users.update({_id: userId}, {$set:{"profile.cookies": cookies, "profile.frappe_login": false}});
-    }
+    }*/
     return result;
   /*} catch (e) {
     // Got a network error, time-out or HTTP error in the 400 or 500 range.

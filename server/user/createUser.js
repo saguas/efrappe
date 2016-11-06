@@ -59,7 +59,8 @@ if (Hooks) {
   Hooks.Events.add("onCreateUser", (user, options) => {
       const group = Reaction.getShopId();
       //console.log("onCreateUser options: ", options);
-      //console.log("onCreateUser user: ", user);
+      console.log("onCreateUser user: ", user);
+      console.log("onCreateUser user: ", user.services && user.services.google);
       //console.log("onCreateUser shopId: ", group);
       if(options.services && options.services.anonymous === true)
         return user;
@@ -91,17 +92,26 @@ if (Hooks) {
      console.log("onCreateUser data: ", data);
      console.log("onCreateUser adminuser: ", adminuser);
      console.log("onCreateUser adminpass: ", adminpass);
-     const login_result = eFrappe.frappe_login_only(adminuser, adminpass);
-     const headers = {Cookie: login_result.headers["set-cookie"]};
-     //here call frappe rest api
-     frappe_create_user(data, headers);
-     //here call POST: frappe.core.doctype.user.user.update_password
-     frappe_update_password(headers, options.password.digest, reset_password_key);
+     let headers;
+     if (!Reaction.hasPermission(["admin"])){
+       const login_result = eFrappe.frappe_login_only(adminuser, adminpass);
+       headers = {Cookie: login_result.headers["set-cookie"]};
+     }
 
-     //make logout
-     const result = eFrappe.frappe_logout_only.call({userId: null}, headers.Cookie);
+     if(user.services && user.services.password){
 
-     return user;
+       //here call frappe rest api
+       frappe_create_user(data, headers);
+       //here call POST: frappe.core.doctype.user.user.update_password
+       frappe_update_password(headers, options.password.digest, reset_password_key);
+
+       //make logout
+       if (!Reaction.hasPermission(["admin"])){
+         const result = eFrappe.frappe_logout_only.call({userId: null}, headers.Cookie);
+       }
+    }
+    //console.log("options.password.digest ", options.password.digest);
+    return user;
   });
 }
 
