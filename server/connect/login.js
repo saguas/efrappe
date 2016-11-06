@@ -232,11 +232,14 @@ Accounts.validateLoginAttempt((opts) => {
           const data = get_user_services_data(user);
 
           //login admin
-          const adminuser = get_frappe_admin_username();
+          /*const adminuser = get_frappe_admin_username();
           const adminpass = getPasswordString(get_frappe_admin_password());
 
           const login_result = frappe_login_only(adminuser, adminpass);
-          const headers = {Cookie: login_result.headers["set-cookie"]};
+          const headers = {Cookie: login_result.headers["set-cookie"]};*/
+
+          //login admin
+          const headers = frappe_login_admin_only();
 
           //get services login token
           const tokenObj = frappe_services_login(headers, "google");
@@ -250,7 +253,7 @@ Accounts.validateLoginAttempt((opts) => {
           //login as oauth_user
           const login_services_result = frappe_login_oauth_user(data, "google", token, 1);
 
-          check_frappe_result(login_services_result);
+          //check_frappe_result(login_services_result);
 
           const userId = opts.user._id;
           //const login_token = login_services_result.data.login_token;
@@ -529,6 +532,7 @@ const frappe_login_oauth_user = function(data, provider, state, generate_login_t
     //const result = HTTP.call("GET", get_frappe_login_oauth_user(), {params: {data: EJSON.stringify(data), provider: provider, state: EJSON.stringify(state)}, data:{efrappe:{origin: "efrappe"}}});
     data.efrappe = {origin: "efrappe"};
     const result = HTTP.call("GET", get_frappe_login_oauth_user(), {params: {data: EJSON.stringify(data), provider: provider, state: EJSON.stringify(state), generate_login_token: generate_login_token}});
+    check_frappe_result(result);
     return result;
   } catch (e) {
     // Got a network error, time-out or HTTP error in the 400 or 500 range.
@@ -566,7 +570,6 @@ const frappe_logout = function(cookies){
     const userId = this.userId;
     const result = frappe_logout_only.call(this, cookies);
     console.log("logout result ", result);
-    check_frappe_result(result);
     const resetcookies = reset_cookies(get_cookies_name());
     Meteor.users.update({_id: userId}, {$set:{"profile.cookies": resetcookies, "profile.frappe_login": false}});
     /*if(result && result.headers && result.headers["set-cookie"]){
@@ -612,6 +615,7 @@ const frappe_logout_only = function(cookies){
     }
     headers.Cookie = cookie;
     const result = HTTP.call("POST", get_frappe_url_logout(), {headers: headers, data:{efrappe:{origin: "efrappe"}}});
+    check_frappe_result(result);
     return result;
   }catch (e) {
     // Got a network error, time-out or HTTP error in the 400 or 500 range.
@@ -624,6 +628,7 @@ const frappe_login_only = function(user, pwd){
   try {
     const result = HTTP.call("POST", get_frappe_url_login(), {params: {usr: user, pwd: pwd}});
     //Meteor.users.update({_id:this.userId}, {$set:{"profile.cookies": result.headers["set-cookie"], "profile.frappe_login": true}});
+    check_frappe_result(result);
     return result;
   } catch (e) {
     // Got a network error, time-out or HTTP error in the 400 or 500 range.
@@ -636,8 +641,8 @@ const frappe_login_admin_only= function(){
   //we needd login as Administrator
   const adminuser = eFrappe.get_frappe_admin_username();
   const adminpass = eFrappe.getPasswordString(eFrappe.get_frappe_admin_password());
-  const login_result = eFrappe.frappe_login_only(adminuser, adminpass);
-  const headers = {Cookie: login_result.headers["set-cookie"]};
+  const result = eFrappe.frappe_login_only(adminuser, adminpass);
+  const headers = {Cookie: result.headers["set-cookie"]};
 
   return headers;
 }
